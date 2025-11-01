@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AmplePoints Admin Calculator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem 0;
+            margin: 0;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 2rem 3rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #555;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 0.85rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 2rem;
+            text-align: left;
+            padding: 1.5rem;
+            background-color: #e6f7ff;
+            border: 1px solid #b3e0ff;
+            border-radius: 8px;
+            display: none; /* Hidden by default */
+        }
+        #result h3 {
+            margin: 0 0 1rem 0;
+            color: #0056b3;
+            text-align: center;
+        }
+        #result p {
+            margin: 0.75rem 0;
+            font-size: 1.1rem;
+            color: #333;
+            line-height: 1.4;
+        }
+        #result .percentage {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #007bff;
+        }
+        .error {
+            color: #D8000C;
+            background-color: #FFD2D2;
+            border: 1px solid #D8000C;
+            padding: 0.75rem;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 1.5rem;
+            display: none; /* Hidden by default */
+        }
+        .success-message {
+            color: #28A745; /* Green color */
+            background-color: #EAF7EC;
+            border: 1px solid #B8E0C0;
+            padding: 0.75rem;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>AmplePoints Admin Calculator</h2>
+        
+        <div id="error-message" class="error"></div>
+
+        <div class="form-group">
+            <label for="originalPrice">Product's Original Price ($)</label>
+            <input type="number" id="originalPrice" placeholder="e.g., 100.00">
+        </div>
+        
+        <div class="form-group">
+            <label for="salePrice">Product's Sale Price ($)</label>
+            <input type="number" id="salePrice" placeholder="e.g., 75.00">
+        </div>
+
+        <div class="form-group">
+            <label for="shippingCost">Shipping Cost ($)</label>
+            <input type="number" id="shippingCost" placeholder="e.g., 8.00">
+        </div>
+        
+        <button onclick="calculateAdminValues()">Calculate Admin Inputs</button>
+        
+        <div id="result">
+            <h3>📋 Admin Panel Inputs</h3>
+            
+            <p id="eligibilityMessage" class="success-message"></p>
+            
+            <p id="adminRetailPrice"></p>
+            <p id="adminDiscount"></p>
+        </div>
+    </div>
+
+    <script>
+        function calculateAdminValues() {
+            const original = parseFloat(document.getElementById('originalPrice').value);
+            const sale = parseFloat(document.getElementById('salePrice').value);
+            const shipping = parseFloat(document.getElementById('shippingCost').value);
+            
+            const resultDiv = document.getElementById('result');
+            const errorDiv = document.getElementById('error-message');
+
+            // --- Input Validation ---
+            if (isNaN(original) || isNaN(sale) || isNaN(shipping)) {
+                errorDiv.textContent = "Please enter numbers in all three fields.";
+                errorDiv.style.display = "block";
+                resultDiv.style.display = "none";
+                return;
+            }
+            if (original <= 0) {
+                errorDiv.textContent = "Original price must be greater than zero.";
+                errorDiv.style.display = "block";
+                resultDiv.style.display = "none";
+                return;
+            }
+             if (shipping < 0) {
+                errorDiv.textContent = "Shipping cost cannot be negative.";
+                errorDiv.style.display = "block";
+                resultDiv.style.display = "none";
+                return;
+            }
+            if (sale >= original) {
+                errorDiv.textContent = "Sale price must be less than the original price.";
+                errorDiv.style.display = "block";
+                resultDiv.style.display = "none";
+                return;
+            }
+            
+            // --- STEP 1: Calculate the Actual Discount Percentage ---
+            const amountSaved = original - sale;
+            const actualDiscount = (amountSaved / original) * 100;
+
+            // --- STEP 2: Check Rule 1 (Minimum 25% discount) ---
+            if (actualDiscount < 25) {
+                errorDiv.textContent = `Product is not eligible. Actual discount is only ${actualDiscount.toFixed(1)}%. Minimum is 25%.`;
+                errorDiv.style.display = "block";
+                resultDiv.style.display = "none";
+                return;
+            }
+
+            // --- STEP 3: Apply Admin Rules ---
+
+            // Rule 4: Shipping Charges
+            let adjustedShipping = 0;
+            if (shipping < 10) {
+                adjustedShipping = shipping * 2; // Double shipping if less than $10
+            } else {
+                adjustedShipping = shipping; // Add exact amount if $10 or more
+            }
+
+            // Rule 5 & 4: Calculate final 'Retail Price' to enter
+            // This is the (original) price + adjusted shipping
+            const adminRetailPrice = original + adjustedShipping;
+
+            // Rule 3: Discount Adjustment
+            let adminDiscount = actualDiscount * 2; // Double the original discount
+            if (adminDiscount > 100) {
+                adminDiscount = 100; // Cap at 100%
+            }
+            
+            // --- Display Results ---
+            errorDiv.style.display = "none"; // Hide error if calculation is successful
+            
+            document.getElementById('eligibilityMessage').innerHTML = `✅ Eligible! (Actual Discount: ${actualDiscount.toFixed(1)}%)`;
+            document.getElementById('adminRetailPrice').innerHTML = `Enter as 'Retail Price': <strong>$${adminRetailPrice.toFixed(2)}</strong>`;
+            document.getElementById('adminDiscount').innerHTML = `Enter as 'Discount': <strong class="percentage">${adminDiscount.toFixed(1)}%</strong>`;
+            
+            resultDiv.style.display = "block"; // Show the result box
+        }
+    </script>
+
+</body>
+</html>
